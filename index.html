@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>台股 AI 分析師</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #010409; color: #c9d1d9; font-family: 'Noto Sans TC','PingFang TC',sans-serif; height: 100vh; display: flex; flex-direction: column; }
+  ::-webkit-scrollbar { width: 5px; } ::-webkit-scrollbar-thumb { background: #1e262f; border-radius: 3px; }
+  #header { padding: 11px 16px; border-bottom: 1px solid #1e262f; background: #0d1117; display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+  #logo { width: 34px; height: 34px; border-radius: 9px; background: linear-gradient(135deg,#00c6a2,#0f62fe); display: flex; align-items: center; justify-content: center; font-size: 17px; }
+  #title { font-weight: 900; font-size: 15px; }
+  #subtitle { font-size: 10px; color: #58a6ff; letter-spacing: 1px; }
+  #sdot { width: 7px; height: 7px; border-radius: 50%; background: #6a7d9f; margin-left: auto; transition: background .3s; }
+  #sdot.ok { background: #3fb950; } #sdot.err { background: #f85149; }
+  #chat { flex: 1; overflow-y: auto; padding: 16px 12px 8px; display: flex; flex-direction: column; }
+  .mu { display: flex; justify-content: flex-end; margin-bottom: 10px; animation: fu .3s ease; }
+  .mu span { background: linear-gradient(135deg,#0f62fe,#0043ce); border-radius: 12px 12px 3px 12px; padding: 9px 15px; font-size: 14px; color: #fff; max-width: 70%; line-height: 1.5; }
+  .mb { display: flex; gap: 10px; margin-bottom: 10px; animation: fu .3s ease; }
+  .bi { width: 32px; height: 32px; border-radius: 9px; background: linear-gradient(135deg,#00c6a2,#0f62fe); display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; }
+  .bb { background: #0d1117; border: 1px solid #1e262f; border-radius: 3px 12px 12px 12px; padding: 10px 14px; font-size: 14px; color: #c9d1d9; line-height: 1.7; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: #58a6ff; animation: db 1.2s ease-in-out infinite; display: inline-block; margin: 0 2px; }
+  .dot:nth-child(2){animation-delay:.2s}.dot:nth-child(3){animation-delay:.4s}
+  @keyframes db{0%,80%,100%{transform:translateY(0);opacity:.4}40%{transform:translateY(-7px);opacity:1}}
+  @keyframes fu{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+  .card { background: #0d1117; border: 1px solid #1e262f; border-radius: 12px; padding: 14px 16px; margin-bottom: 8px; }
+  .card-hero { background: linear-gradient(135deg,#0d1117,#0f1923); }
+  .pm { font-size: 32px; font-weight: 900; font-variant-numeric: tabular-nums; }
+  .g4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; margin-top: 10px; }
+  .mc { background: #161b22; border: 1px solid #1e262f; border-radius: 8px; padding: 8px 10px; text-align: center; }
+  .ml { font-size: 10px; color: #6a7d9f; margin-bottom: 3px; }
+  .mv { font-size: 15px; font-weight: 800; }
+  .ms { font-size: 10px; color: #3d4f6a; margin-top: 2px; }
+  .sbw { margin-top: 10px; }
+  .sbb { height: 4px; background: #1e262f; border-radius: 3px; overflow: hidden; margin-top: 3px; }
+  .sbf { height: 100%; border-radius: 3px; transition: width 1.2s ease; }
+  .sh { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; padding-bottom: 5px; border-bottom: 1px solid #1e262f; font-size: 11px; font-weight: 800; color: #58a6ff; letter-spacing: 1.5px; }
+  .kv { display: flex; justify-content: space-between; padding: 3px 0; font-size: 12px; }
+  .kl { color: #6a7d9f; } .kv2 { font-weight: 500; font-variant-numeric: tabular-nums; }
+  .dv { border-top: 1px solid #1e262f; margin: 8px 0; }
+  .tag { display: inline-block; font-size: 11px; padding: 3px 10px; border-radius: 10px; margin-bottom: 8px; }
+  .tw { background: #3d1a00; color: #f7a23e; border: 1px solid #f7a23e44; }
+  .to { background: #0d2818; color: #3fb950; border: 1px solid #3fb95044; }
+  .eb { width: 100%; padding: 8px; border-radius: 8px; border: 1px solid #1e262f; background: transparent; color: #58a6ff; font-size: 12px; cursor: pointer; font-family: inherit; margin-top: 6px; }
+  .det { display: none; margin-top: 8px; }
+  .det.open { display: block; }
+  .aib { background: linear-gradient(135deg,#080f1a,#0a1628); border: 1px solid #1f4068; border-radius: 10px; padding: 10px 14px; margin-bottom: 10px; }
+  .ail { font-size: 11px; color: #58a6ff; font-weight: 700; margin-bottom: 6px; }
+  .ait { font-size: 13px; color: #c9d1d9; line-height: 1.8; white-space: pre-wrap; }
+  .sbadge { padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 800; }
+  .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
+  .g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0 8px; }
+  #quick { padding: 7px 12px; display: flex; gap: 5px; border-top: 1px solid #1e262f; background: #0d1117; overflow-x: auto; flex-shrink: 0; align-items: center; }
+  .ql { font-size: 11px; color: #58a6ff; flex-shrink: 0; }
+  .qb { padding: 3px 11px; border-radius: 20px; border: 1px solid #1e262f; background: transparent; color: #8b949e; font-size: 12px; cursor: pointer; font-family: inherit; flex-shrink: 0; }
+  .qb:hover { color: #c9d1d9; }
+  #ia { padding: 8px 12px 14px; background: #0d1117; border-top: 1px solid #1e262f; flex-shrink: 0; }
+  #iw { display: flex; gap: 8px; background: #0d1117; border: 1px solid #1e262f; border-radius: 12px; padding: 5px 5px 5px 14px; align-items: center; }
+  #inp { flex: 1; background: transparent; border: none; color: #e6edf3; font-size: 15px; font-family: inherit; outline: none; padding: 6px 0; }
+  #sb { width: 36px; height: 36px; border-radius: 9px; border: none; background: linear-gradient(135deg,#00c6a2,#0f62fe); color: #fff; font-size: 17px; cursor: pointer; flex-shrink: 0; }
+  #sb:disabled { background: #1e262f; cursor: not-allowed; }
+  #hint { font-size: 10px; color: #2d3748; text-align: center; margin-top: 5px; }
+</style>
+</head>
+<body>
+<div id="header">
+  <div id="logo">📡</div>
+  <div><div id="title">台股 AI 分析師</div><div id="subtitle">TWSE · FINMIND · YFINANCE · CLAUDE</div></div>
+  <div id="sdot"></div>
+</div>
+<div id="chat">
+  <div class="mb"><div class="bi">🤖</div><div class="bb">你好！輸入台股代號（如 2330、2454、8155），我會即時抓取數據並生成完整分析報告。</div></div>
+</div>
+<div id="quick">
+  <span class="ql">快速：</span>
+  <button class="qb" onclick="go('2330')">2330</button>
+  <button class="qb" onclick="go('2454')">2454</button>
+  <button class="qb" onclick="go('2317')">2317</button>
+  <button class="qb" onclick="go('2308')">2308</button>
+  <button class="qb" onclick="go('6505')">6505</button>
+  <button class="qb" onclick="go('3008')">3008</button>
+  <button class="qb" onclick="go('2382')">2382</button>
+  <button class="qb" onclick="go('2412')">2412</button>
+</div>
+<div id="ia">
+  <div id="iw">
+    <input id="inp" placeholder="輸入股票代號（如 2330）..." onkeydown="if(event.key==='Enter')send()">
+    <button id="sb" onclick="send()">↑</button>
+  </div>
+  <div id="hint">資料來源：TWSE · FinMind · yfinance · Claude AI ｜ 僅供參考，不構成投資建議</div>
+</div>
+<script>
+const chat=document.getElementById('chat'),inp=document.getElementById('inp'),sb=document.getElementById('sb'),sdot=document.getElementById('sdot');
+let busy=false;
+fetch('/api/health').then(r=>{sdot.className=r.ok?'ok':'err'}).catch(()=>{sdot.className='err'});
+function scroll(){chat.scrollTop=chat.scrollHeight}
+function addEl(html,cls){const d=document.createElement('div');d.className=cls;d.innerHTML=html;chat.appendChild(d);scroll();return d}
+function botMsg(t){addEl(`<div class="bi">🤖</div><div class="bb">${t}</div>`,'mb')}
+function userMsg(t){addEl(`<span>${t}</span>`,'mu')}
+function loader(){return addEl(`<div class="bi">📡</div><div class="bb"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>`,'mb')}
+function pc(v){return v>0?'#3fb950':v<0?'#f85149':'#c9d1d9'}
+function f(v,d=2){return v!=null?Number(v).toFixed(d):'—'}
+function fp(v,d=1){return v!=null?`${v>0?'+':''}${Number(v).toFixed(d)}%`:'—'}
+function fn(v){return v!=null?`${v>0?'+':''}${Math.round(v)}`:'—'}
+function kv(l,val,c='#e6edf3',b=false){return `<div class="kv"><span class="kl">${l}</span><span class="kv2" style="color:${c};${b?'font-weight:700':''}">${val??'—'}</span></div>`}
+function mac(p,ma){return ma?(p>ma?'#3fb950':'#f85149'):'#6a7d9f'}
+function maa(p,ma){return ma?(p>ma?' ▲':' ▼'):''}
+let idx=0;
+function toggleDet(id,btn){const el=document.getElementById(id);el.classList.toggle('open');btn.textContent=el.classList.contains('open')?'▲ 收起詳細分析':'▼ 展開詳細分析';}
+function render(d,ai){
+  const p=d.price,t=d.technical,v=d.valuation,pr=d.profitability,c=d.chips,r=d.revenue,s=d.summary,m=d.meta;
+  const isUp=(p.change??0)>=0,pc2=isUp?'#3fb950':'#f85149',sc=s.sentiment_color;
+  const pct=Math.min(100,Math.max(0,(s.score/s.max_score)*100));
+  const uid='u'+(idx++);
+  const sum=`<div class="card card-hero">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
+      <div><div style="font-size:18px;font-weight:900;color:#f0f6fc">${m.name} <span style="font-weight:400;font-size:13px;color:#58a6ff">（${m.stock_id}）</span></div>
+      <div style="font-size:11px;color:#3d4f6a;margin-top:2px">${m.industry||'—'} · ${m.timestamp}</div></div>
+      <div class="sbadge" style="background:${sc}18;border:1px solid ${sc}44;color:${sc}">${s.sentiment}</div>
+    </div>
+    <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:4px">
+      <span class="pm" style="color:${pc2}">${f(p.current)}</span>
+      ${p.change!=null?`<span style="font-size:14px;color:${pc2}">${isUp?'▲':'▼'} ${f(Math.abs(p.change))}（${f(Math.abs(p.change_pct))}%）</span>`:''}
+    </div>
+    <div style="font-size:11px;color:#4a5568">開 ${f(p.open)} ／ 高 ${f(p.high)} ／ 低 ${f(p.low)}</div>
+    <div class="g4">
+      <div class="mc"><div class="ml">RSI(14)</div><div class="mv" style="color:${t.rsi>70?'#f7a23e':t.rsi<30?'#3fb950':'#79c0ff'}">${t.rsi??'—'}</div><div class="ms">${t.rsi_label||''}</div></div>
+      <div class="mc"><div class="ml">52W位置</div><div class="mv">${p.pos_52w??'—'}%</div><div class="ms">${p.pos_52w>80?'近高點⚠️':p.pos_52w<20?'近低點':'中段'}</div></div>
+      <div class="mc"><div class="ml">法人5日</div><div class="mv" style="color:${pc(c.total_net)}">${fn(c.total_net)}張</div><div class="ms">${c.total_net>0?'買超':'賣超'}</div></div>
+      <div class="mc"><div class="ml">月營收YoY</div><div class="mv" style="color:${pc(r.yoy)}">${fp(r.yoy)}</div><div class="ms">年增率</div></div>
+    </div>
+    <div class="sbw"><div style="display:flex;justify-content:space-between;margin-bottom:3px"><span style="font-size:10px;color:#6a7d9f">多空綜合評分</span><span style="font-size:10px;color:${sc};font-weight:700">${s.score}/${s.max_score}</span></div>
+    <div class="sbb"><div class="sbf" style="width:${pct}%;background:${sc}"></div></div></div>
+  </div>`;
+  const det=`
+  ${ai?`<div class="aib"><div class="ail">🤖 AI 操作建議</div><div class="ait">${ai}</div></div>`:''}
+  <div class="card"><div class="sh">📈 技術指標</div>
+    <span class="tag ${t.ma_signal.includes('⚠️')?'tw':'to'}">${t.ma_signal}</span>
+    <div class="g2">
+      ${kv('MA5',f(t.ma5)+maa(p.current,t.ma5),mac(p.current,t.ma5))}
+      ${kv('MA20',f(t.ma20)+maa(p.current,t.ma20),mac(p.current,t.ma20))}
+      ${kv('MA60',f(t.ma60)+maa(p.current,t.ma60),mac(p.current,t.ma60))}
+      ${kv('MA120',f(t.ma120)+maa(p.current,t.ma120),mac(p.current,t.ma120))}
+      ${kv('MA240',f(t.ma240)+maa(p.current,t.ma240),mac(p.current,t.ma240))}
+      ${kv('乖離率MA60',fp(t.bias60),t.bias60>20?'#f85149':t.bias60<-15?'#3fb950':'#c9d1d9')}
+    </div>
+    <div class="dv"></div>
+    <div class="g2">
+      ${kv('52W 高',f(p.high_52w))}${kv('52W 低',f(p.low_52w))}
+      ${kv('52W位置',`${p.pos_52w??'—'}%`,p.pos_52w>70?'#f7a23e':'#3fb950')}
+      ${kv('量比5/20日',t.vol_ratio?t.vol_ratio+'x':'—')}
+      ${kv('ATR(14)',f(t.atr))}${kv('Beta',f(v.beta))}
+    </div>
+    <div class="dv"></div>
+    ${kv('RSI(14)',`${t.rsi??'—'} · ${t.rsi_label??'—'}`,t.rsi>70?'#f7a23e':t.rsi<30?'#3fb950':'#79c0ff')}
+    ${kv('MACD',t.macd!=null?(t.macd>0?'+':'')+t.macd:'—',t.macd>0?'#3fb950':'#f85149')}
+    ${kv('Signal',f(t.signal,3))}
+    ${kv('交叉訊號',t.macd_cross??'—',t.macd_cross?.includes('黃金')?'#3fb950':'#f85149',true)}
+    <div class="dv"></div>
+    <div class="g3">${kv('1月',fp(t.chg_1m),pc(t.chg_1m))}${kv('3月',fp(t.chg_3m),pc(t.chg_3m))}${kv('1年',fp(t.chg_1y),pc(t.chg_1y))}</div>
+  </div>
+  <div class="card"><div class="sh">💰 估值</div>
+    ${kv('本益比 PE',f(v.pe,1),v.pe>40?'#f7a23e':v.pe<15?'#3fb950':'#c9d1d9')}
+    ${kv('股價淨值比 PB',f(v.pb,2))}${kv('EPS',f(v.eps,2))}
+    ${kv('ROE',v.roe!=null?v.roe+'%':'—',v.roe>20?'#3fb950':'#c9d1d9')}
+    ${kv('殖利率',v.dividend_yield!=null?v.dividend_yield+'%':'—',v.dividend_yield>4?'#3fb950':'#c9d1d9')}
+    ${kv('市值',v.market_cap?(v.market_cap/1e8).toFixed(0)+'億':'—')}
+  </div>
+  <div class="card"><div class="sh">📋 獲利品質</div>
+    ${kv('毛利率',pr.gross_margin!=null?pr.gross_margin+'%':'—',pr.gross_margin>40?'#3fb950':'#c9d1d9')}
+    ${kv('營業利益率',pr.opm!=null?pr.opm+'%':'—',pr.opm>15?'#3fb950':'#c9d1d9')}
+    ${kv('淨利率',pr.npm!=null?pr.npm+'%':'—',pr.npm>10?'#3fb950':'#c9d1d9')}
+    ${kv('自由現金流',pr.fcf_b!=null?(pr.fcf_b>0?'+':'')+pr.fcf_b+'億':'—',pc(pr.fcf_b))}
+    ${kv('營收成長YoY',fp(pr.revenue_growth),pc(pr.revenue_growth))}
+  </div>
+  <div class="card"><div class="sh">🎯 籌碼（近5日三大法人）</div>
+    ${kv('外資',fn(c.fii_net)+' 張',pc(c.fii_net),true)}
+    ${kv('投信',fn(c.it_net)+' 張',pc(c.it_net))}
+    ${kv('自營商',fn(c.dealer_net)+' 張',pc(c.dealer_net))}
+    ${kv('合計',fn(c.total_net)+' 張',pc(c.total_net),true)}
+    <div class="dv"></div>
+    ${kv('融資餘額',c.margin_balance!=null?c.margin_balance.toLocaleString()+' 張':'—')}
+    ${kv('融資增減',c.margin_chg!=null?(c.margin_chg>0?'▲':'▼')+Math.abs(c.margin_chg):'—',c.margin_chg>0?'#f7a23e':'#3fb950')}
+    ${kv('融券餘額',c.short_balance!=null?c.short_balance.toLocaleString()+' 張':'—')}
+    ${kv('融券增減',c.short_chg!=null?(c.short_chg>0?'▲':'▼')+Math.abs(c.short_chg):'—',c.short_chg>0?'#f85149':'#3fb950')}
+  </div>
+  <div class="card"><div class="sh">🏭 月營收</div>
+    ${kv('年增率 YoY',fp(r.yoy),pc(r.yoy),true)}<div class="dv"></div>
+    ${(r.recent||[]).slice(-6).map(x=>kv(x.date?.slice(0,7),x.revenue?(x.revenue/1e8).toFixed(2)+' 億':'—')).join('')}
+  </div>
+  ${m.description?`<div class="card"><div class="sh">🏢 公司簡介</div><div style="font-size:12px;color:#8b949e;line-height:1.7">${m.description}</div></div>`:''}`;
+
+  const wrap=document.createElement('div');
+  wrap.className='mb';wrap.style.alignItems='flex-start';
+  wrap.innerHTML=`<div class="bi" style="margin-top:2px">📡</div><div style="flex:1;min-width:0">${sum}<button class="eb" onclick="toggleDet('${uid}',this)">▼ 展開詳細分析</button><div id="${uid}" class="det">${det}</div></div>`;
+  chat.appendChild(wrap);scroll();
+}
+async function go(code){
+  if(busy)return;
+  const id=code.trim().replace(/\s/g,'');
+  if(!id)return;
+  busy=true;sb.disabled=true;inp.value='';
+  userMsg('查詢 '+id);
+  const ld=loader();
+  try{
+    const res=await fetch('/api/analyze/'+id);
+    if(!res.ok){const e=await res.json().catch(()=>({}));ld.remove();botMsg('⚠️ '+(e.detail||'找不到 '+id+' 的資料'));return;}
+    const data=await res.json();
+    let ai='';
+    try{
+      const t=data.technical,v=data.valuation,c=data.chips,r=data.revenue,s=data.summary,p=data.price,m=data.meta;
+      const prompt=`你是台股專業分析師。根據以下即時數據，用繁體中文給出4-5句精準操作建議，包含：多空方向、關鍵指標解讀、操作策略、風險提示。語氣專業直接。\n\n股票：${m.name}(${m.stock_id}) ${m.industry}\n現價：${p.current} ｜ 漲跌：${p.change_pct}% ｜ 52W位置：${p.pos_52w}%\n均線：${t.ma_signal}\nRSI：${t.rsi}（${t.rsi_label}）｜ MACD：${t.macd_cross}\n法人5日：${c.total_net}張\n月營收YoY：${r.yoy}% ｜ PE：${v.pe} ｜ ROE：${v.roe}%\n多空評分：${s.score}/${s.max_score}（${s.sentiment}）`;
+      const cr=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
+      const cd=await cr.json();
+      ai=cd.content?.map(b=>b.text||'').join('')||'';
+    }catch(e){ai='（AI建議暫時無法取得）';}
+    ld.remove();render(data,ai);
+  }catch(e){ld.remove();botMsg('⚠️ 連線失敗：'+e.message);}
+  finally{busy=false;sb.disabled=false;}
+}
+function send(){const v=inp.value.trim();if(v)go(v);}
+</script>
+</body>
+</html>
