@@ -6,6 +6,8 @@
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 import httpx
 import yfinance as yf
 import pandas as pd
@@ -526,3 +528,7 @@ async def analyze_stock(stock_id: str):
 @app.get("/api/health")
 async def health():
     return {"status": "ok", "time": datetime.now().isoformat()}
+
+@app.get("/")
+async def root():
+    return FileResponse("index.html")
